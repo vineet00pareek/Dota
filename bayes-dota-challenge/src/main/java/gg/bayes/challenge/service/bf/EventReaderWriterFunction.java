@@ -31,6 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class EventReaderWriterFunction {
 
+    /**
+     * The EventBusinessFunction
+     */
     @Autowired
     private EventBusinessFunction eventBusinessService;
 
@@ -53,12 +56,12 @@ public class EventReaderWriterFunction {
      * It's holds key as hero spells and value is total number of he spells for
      * casts.
      */
-    Map<String, Integer> spellMap = new HashMap<>();
+    private Map<String, Integer> spellMap = new HashMap<>();
 
     /**
      * It's holds key as hero and value is list of damage of heroes he damaged.
      */
-    Map<String, List<HeroDamageEventEntity>> heroDamageEntitiesMap = new HashMap<>();
+    private Map<String, List<HeroDamageEventEntity>> heroDamageEntitiesMap = new HashMap<>();
 
     /**
      * This method used for reading the match log file and captured the events and
@@ -75,10 +78,8 @@ public class EventReaderWriterFunction {
 
         heroMatchEventEntities.stream().forEach(heroEntity -> {
             heroEntity.setKills(heroKillsMap.get(heroEntity.getHeroName()));
-            heroEntity = eventBusinessService.addEntityForSpell(heroEntity, heroKillsMap);
+            heroEntity = eventBusinessService.addEntityForSpell(heroEntity, spellMap);
             heroEntity = eventBusinessService.addEntityForDamage(heroEntity, heroDamageEntitiesMap);
-            heroEntity.setTotal_damages(
-                    eventBusinessService.totalDamageCountforHero(heroEntity.getHeroName(), heroDamageEntitiesMap));
         });
         log.info("successfully added Unique hero in set");
         return heroMatchEventEntities;
@@ -99,15 +100,14 @@ public class EventReaderWriterFunction {
             while (eventlogs != null) {
                 eventlogs = reader.readLine();
                 if (StringUtils.isNoneEmpty(eventlogs) && !eventlogs.contains(Event.USES.getEvent())
-                        && !eventlogs.contains("game")) {
+                        && !eventlogs.contains(MatchConstant.GAME)) {
                     addHeros(eventlogs, matchId);
-                    addEvents(eventlogs);
+                    writeEvents(eventlogs);
                 }
             }
-        } catch (IOException exc) {
-            throw new MatchServiceException("", exc.getMessage(), exc);
         }catch (Exception exc) {
-            throw new MatchServiceException("", exc.getMessage(), exc);
+            log.error("Getting exception while reading Events from match logs",exc);
+            throw new MatchServiceException("Getting exception while reading Events from match logs", exc.getMessage(), exc);
         }
     }
 
@@ -118,7 +118,6 @@ public class EventReaderWriterFunction {
         heroKillsMap.clear();
         heroes.clear();
         heroMatchEventEntities.clear();
-
     }
 
     /**
@@ -138,7 +137,7 @@ public class EventReaderWriterFunction {
                 String hero = token.substring(MatchConstant.NPC_DOTA_HERO.length());
                 if (!hero.contains(MatchConstant.SYMBOL_S)) {
                     if (heroes.add(hero)) {
-                        extracted(matchId, hero);
+                        createNewHero(matchId, hero);
                         break;
                     }
                 }
@@ -152,7 +151,7 @@ public class EventReaderWriterFunction {
      * @param matchId
      * @param hero
      */
-    private void extracted(long matchId, String hero) {
+    private void createNewHero(long matchId, String hero) {
         log.debug("Extract method for Hero entity");
         HeroMatchEventEntity heroKillsEntity = new HeroMatchEventEntity();
         heroKillsEntity.setHeroName(hero);
@@ -167,29 +166,31 @@ public class EventReaderWriterFunction {
      * 
      * @param event It is one event
      */
-    public void addEvents(String eventlogs) {
+    public void writeEvents(String eventlogs) {
         log.debug("start fetching individual match Events from log and store");
         if (eventlogs.contains(Event.CASTS.getEvent())) {
-            spellMap = eventBusinessService.addSpellForHeroMap(eventlogs, heroMatchEventEntities, spellMap);
-            log.info("Spell event data: " + spellMap);
+            eventBusinessService.addSpellForHeroMap(eventlogs, heroMatchEventEntities, spellMap);
         } else if (eventlogs.contains(Event.BUYS.getEvent())) {
-            heroMatchEventEntities = eventBusinessService.addItemsForHero(eventlogs, heroMatchEventEntities);
-           // log.info("Hero match event data: " +heroMatchEventEntities);
+            eventBusinessService.addItemsForHero(eventlogs, heroMatchEventEntities);
         } else if (eventlogs.contains(Event.HITS.getEvent())) {
-            heroDamageEntitiesMap = eventBusinessService.addDamgeByHitsHero(eventlogs, heroDamageEntitiesMap);
-            log.info("Hero damage event data: " + heroDamageEntitiesMap);
+            eventBusinessService.addDamgeByHitsHero(eventlogs, heroDamageEntitiesMap);
         } else if (eventlogs.contains(Event.KILLED.getEvent())) {
-            for (String heroName : heroes) {
-                if (eventlogs.contains(MatchConstant.NPC_DOTA_HERO + heroName)) {
-                    if (heroKillsMap.containsKey(heroName)) {
-                        heroKillsMap.put(heroName, heroKillsMap.get(heroName) + 1);
-                    } else {
-                        heroKillsMap.put(heroName, 1);
-                    }
-                    break;
+            countHeroKills(eventlogs);
+        }
+    }
+   // npc_dota_hero_ember_spirit is killed by npc_dota_hero_monkey_king
+    private void countHeroKills(String eventlogs) {
+        String [] killedEvent = eventlogs.split(Event.KILLED.getEvent());
+        String killedByHero = killedEvent[1];
+        for (String heroName : heroes) {
+            if (killedByHero.contains(MatchConstant.NPC_DOTA_HERO + heroName)) {
+                if (heroKillsMap.containsKey(heroName)) {
+                    heroKillsMap.put(heroName, heroKillsMap.get(heroName) + 1);
+                } else {
+                    heroKillsMap.put(heroName, 1);
                 }
+                break;
             }
         }
     }
-
 }

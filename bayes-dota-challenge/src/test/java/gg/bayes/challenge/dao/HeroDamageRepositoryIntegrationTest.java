@@ -30,13 +30,12 @@ public class HeroDamageRepositoryIntegrationTest {
     public void whenFindByMatchIdThenReturnHeroEntity() {
         HeroMatchEventEntity heroEntity = new HeroMatchEventEntity();
 
-        heroEntity.setHeroName("rubick");
+        heroEntity.setHeroName("gyrocopter");
         heroEntity.setMatchId(1L);
         heroEntity.setKills(27);
-        heroEntity.setTotal_damages(9669);
         HeroDamageEventEntity heroDamageEntity = new HeroDamageEventEntity();
-        heroDamageEntity.setDamage_instance(3807);
-        heroDamageEntity.setTargetHero("mars");
+        heroDamageEntity.setDamageInstance(137);
+        heroDamageEntity.setTargetHero("grimstroke");
         heroDamageEntity.setHeroKills(heroEntity);
         List<HeroDamageEventEntity> heroDamageEntities = new ArrayList<HeroDamageEventEntity>();
         heroDamageEntities.add(heroDamageEntity);
@@ -45,10 +44,9 @@ public class HeroDamageRepositoryIntegrationTest {
         entityManager.persist(heroEntity);
         entityManager.flush();
 
-        List<HeroDamageEventEntity> heroDamageEntityCollection = heroDamageRepository.join("rubick", 1L);
+        List<HeroDamageEventEntity> heroDamageEntityCollection = heroDamageRepository.fetchHeroDamageEvent("rubick", 1L);
         heroDamageEntityCollection.forEach(heroDamage -> {
             assertThat(heroDamage.getTargetHero()).isEqualTo(heroDamageEntity.getTargetHero());
-            assertThat(heroDamage.getDamage_instance()).isEqualTo(heroDamageEntity.getDamage_instance());
         });
     }
 

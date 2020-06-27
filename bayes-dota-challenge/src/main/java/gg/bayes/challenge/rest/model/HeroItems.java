@@ -1,16 +1,12 @@
 package gg.bayes.challenge.rest.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
+@AllArgsConstructor
 @Data
 public class HeroItems {
     private String item;
     private Long timestamp;
-
-    public HeroItems(String item, Long timestamp) {
-        super();
-        this.item = item;
-        this.timestamp = timestamp;
-    }
 
 }

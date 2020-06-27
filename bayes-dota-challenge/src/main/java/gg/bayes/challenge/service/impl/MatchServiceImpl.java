@@ -1,8 +1,7 @@
 package gg.bayes.challenge.service.impl;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,8 +28,7 @@ import gg.bayes.challenge.service.bf.EventReaderWriterFunction;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * This class is used to fetch all hero and event associate with it and store
- * into database.
+ * This class is used to implement the business logic of the match events.
  * 
  * @author VineetPareek
  *
@@ -58,12 +56,21 @@ public class MatchServiceImpl implements MatchService {
     @Autowired
     private HeroKillsRepository heroRepository;
 
+    /**
+     * This is used to connect database to fetch HeroSpells
+     */
     @Autowired
     private HeroSpellsRepository heroSpellsRepository;
 
+    /**
+     * This is used to connect database to fetch HeroItem
+     */
     @Autowired
     private HeroItemsRepository heroItemsRepository;
 
+    /**
+     * This is used to connect database to fetch HeroDamage
+     */
     @Autowired
     private HeroDamageRepository heroDamageRepository;
 
@@ -74,7 +81,7 @@ public class MatchServiceImpl implements MatchService {
     private EventReaderWriterFunction eventService;
 
     /**
-     * This method used for insert events in to Database.
+     * This method used for insert match events in to Database.
      * 
      * @param payload this is content of events
      * @return {@link Long}
@@ -82,23 +89,22 @@ public class MatchServiceImpl implements MatchService {
      */
     @Override
     public Long ingestMatch(String payload) throws MatchServiceException {
-        log.debug("MatchServiceImpl: Method call for checking individual events and insert match events into database");
-        Set<HeroMatchEventEntity> heroEntities = eventService.readMatchLogs(payload, matchId);
-
+        log.debug(
+                "MatchServiceImpl:ingestMatch() Method call for checking individual events and insert match events into database");
+        OptionalLong matchID = OptionalLong.empty();
         try {
-
-            heroEntities = new HashSet<HeroMatchEventEntity>(heroRepository.saveAll(heroEntities));
-            heroEntities.forEach(hero -> {
-                matchId = hero.getMatchId();
-                return;
-            });
+            Set<HeroMatchEventEntity> heroEntities = eventService.readMatchLogs(payload, matchId);
+            List<HeroMatchEventEntity> heroMatchEventEntities = heroRepository.saveAll(heroEntities);
+            matchID = heroMatchEventEntities.stream().mapToLong(heroEntity -> heroEntity.getMatchId()).findFirst();
+            matchId++;
             log.info("successfully reading the data from match logs and store into database Match ID: " + matchId);
         } catch (Exception e) {
+            log.error("Getting exception for finding Heros in the match with match ID : " + matchId, e.getMessage(), e);
             throw new MatchServiceException(
                     "Getting exception for finding Heros in the match with match ID : " + matchId, e.getMessage(), e);
         }
         eventService.clean();
-        return matchId;
+        return matchID.getAsLong();
     }
 
     /**
@@ -110,15 +116,18 @@ public class MatchServiceImpl implements MatchService {
      */
     @Override
     public List<HeroKills> getHeroKillsByMatchId(Long matchId) throws MatchServiceException {
-        log.debug("Fetching Hero kills event from database using match ID");
+        log.debug("MatchServiceImpl:getHeroKillsByMatchId() Fetching Hero kills event from database using match ID");
         List<HeroKills> heroKills = null;
         try {
             List<HeroMatchEventEntity> listOfHero = heroRepository.findByMatchId(matchId);
+            if(listOfHero.isEmpty())
+                throw new MatchServiceException(
+                        "No match available with provided match ID : " + matchId);
             heroKills = listOfHero.stream().map(list -> new HeroKills(list.getHeroName(), list.getKills()))
                     .collect(Collectors.toList());
-            log.info("Successfully fetched the hero kills event from database using match ID : "
-                    + listOfHero);
+            log.info("Successfully fetched the hero kills event from database using match ID : " + matchId);
         } catch (Exception e) {
+            log.error("Getting exception for finding Heros in the match with match ID : " + matchId, e.getMessage(), e);
             throw new MatchServiceException(
                     "Getting exception for finding Heros in the match with match ID : " + matchId, e.getMessage(), e);
         }
@@ -135,15 +144,21 @@ public class MatchServiceImpl implements MatchService {
      */
     @Override
     public List<HeroItems> getItemsByMatchIdAndHeroName(Long matchId, String heroName) throws MatchServiceException {
-        log.debug("Fetching Hero Items event from database using match ID and Hero Name");
+        log.debug(
+                "MatchServiceImpl:getItemsByMatchIdAndHeroName() Fetching Hero Items event from database using match ID and Hero Name");
         List<HeroItems> heroItems = null;
         try {
             List<HeroItemsEventEntity> itemsEntity = heroItemsRepository.fetchHeroItemsEvent(heroName, matchId);
             heroItems = itemsEntity.stream().map(item -> new HeroItems(item.getItem(), item.getTime()))
                     .collect(Collectors.toList());
+            if(heroItems.isEmpty())
+                throw new MatchServiceException(
+                        "No records available with provided match ID : "+matchId+" and Hero name : " + heroName);
             log.info("Successfully fetched the Items event from database using match ID : " + matchId
                     + " and Hero name : " + heroName + " is : " + heroItems);
         } catch (Exception e) {
+            log.error("Getting exception for finding Items event with match ID : " + matchId + " and Hero Name : "
+                    + heroName, e.getMessage(), e);
             throw new MatchServiceException("Getting exception for finding Items event with match ID : " + matchId
                     + " and Hero Name : " + heroName, e.getMessage(), e);
         }
@@ -160,15 +175,21 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public List<HeroSpells> getHeroSpellsByMatchIdAndHeroName(Long matchId, String heroName)
             throws MatchServiceException {
-        log.debug("Fetching Hero Spells event from database using match ID and Hero Name");
+        log.debug(
+                "MatchServiceImpl:getHeroSpellsByMatchIdAndHeroName() Fetching Hero Spells event from database using match ID and Hero Name");
         List<HeroSpells> heroSpells = null;
         try {
             List<HeroSpellsEventEntity> spellsEntity = heroSpellsRepository.fetchHeroSpellsEvent(heroName, matchId);
             heroSpells = spellsEntity.stream().map(spell -> new HeroSpells(spell.getSpellName(), spell.getCaste()))
                     .collect(Collectors.toList());
+            if(heroSpells.isEmpty())
+                throw new MatchServiceException(
+                        "No records available with provided match ID : "+matchId+" and Hero name : " + heroName);
             log.info("Successfully fetched the Spells event from database using match ID : " + matchId
                     + " and Hero name : " + heroName + " is : " + heroSpells);
         } catch (Exception e) {
+            log.error("Getting exception for finding Spell event with match ID : " + matchId + " and Hero Name : "
+                    + heroName, e.getMessage(), e);
             throw new MatchServiceException("Getting exception for finding Spell event with match ID : " + matchId
                     + " and Hero Name : " + heroName, e.getMessage(), e);
         }
@@ -187,26 +208,22 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public List<HeroDamage> getHeroDamageByMatchIdAndHeroName(Long matchId, String heroName)
             throws MatchServiceException {
-        log.debug("Fetching Hero Damage event from database using match ID and Hero Name");
-        List<HeroDamage> heroDamageList = null;
+        log.debug(
+                "MatchServiceImpl:getHeroDamageByMatchIdAndHeroName() Fetching Hero Damage event from database using match ID and Hero Name");
+        List<HeroDamage>  heroDamageList=null;
         try {
-            List<HeroMatchEventEntity> listOfHero = heroRepository.findByMatchId(matchId);
-            List<HeroDamageEventEntity> damageEntities = heroDamageRepository.fetchHeroDamageEvent(heroName, matchId);
+            List<HeroDamageEventEntity>  damageEntities = heroDamageRepository.fetchHeroDamageEvent(heroName, matchId);
             heroDamageList = damageEntities.stream().map(
-                    damageEntity -> new HeroDamage(damageEntity.getTargetHero(), damageEntity.getDamage_instance()))
+                    damageEntity -> new HeroDamage(damageEntity.getTargetHero(), damageEntity.getDamageInstance(),damageEntity.getTotalDamage()))
                     .collect(Collectors.toList());
-            for (HeroMatchEventEntity heroEntity : listOfHero) {
-                if (!Objects.equals(heroEntity.getHeroName(), heroName)) {
-                    for (HeroDamage heroDamage : heroDamageList) {
-                        if (heroDamage.getTarget().equals(heroEntity.getHeroName())) {
-                            heroDamage.setTotalDamage(heroEntity.getTotal_damages());
-                        }
-                    }
-                }
-            }
+            if(heroDamageList.isEmpty())
+                throw new MatchServiceException(
+                        "No records available with provided match ID : "+matchId+" and Hero name : " + heroName);
             log.info("Successfully fetched the Damage event from database using match ID : " + matchId
                     + " and Hero name : " + heroName + " is : " + heroDamageList);
         } catch (Exception e) {
+            log.error("Getting exception for finding damage event with match ID : " + matchId + " and Hero Name : "
+                    + heroName, e.getMessage(), e);
             throw new MatchServiceException("Getting exception for finding damage event with match ID : " + matchId
                     + " and Hero Name : " + heroName, e.getMessage(), e);
         }

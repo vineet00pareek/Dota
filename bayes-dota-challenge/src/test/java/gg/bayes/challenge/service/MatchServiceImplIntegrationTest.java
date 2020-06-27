@@ -21,6 +21,7 @@ import gg.bayes.challenge.dao.HeroDamageRepository;
 import gg.bayes.challenge.dao.HeroItemsRepository;
 import gg.bayes.challenge.dao.HeroKillsRepository;
 import gg.bayes.challenge.dao.HeroSpellsRepository;
+import gg.bayes.challenge.exception.MatchServiceException;
 import gg.bayes.challenge.pojo.HeroDamageEventEntity;
 import gg.bayes.challenge.pojo.HeroItemsEventEntity;
 import gg.bayes.challenge.pojo.HeroMatchEventEntity;
@@ -29,8 +30,8 @@ import gg.bayes.challenge.rest.model.HeroDamage;
 import gg.bayes.challenge.rest.model.HeroItems;
 import gg.bayes.challenge.rest.model.HeroKills;
 import gg.bayes.challenge.rest.model.HeroSpells;
+import gg.bayes.challenge.service.bf.EventReaderWriterFunction;
 import gg.bayes.challenge.service.impl.MatchServiceImpl;
-import gg.bayes.challenge.utils.ReaderUtils;
 
 @RunWith(SpringRunner.class)
 public class MatchServiceImplIntegrationTest {
@@ -60,7 +61,7 @@ public class MatchServiceImplIntegrationTest {
     private HeroSpellsRepository heroSpellsRepository;
 
     @MockBean
-    private ReaderUtils readerUtils;
+    private EventReaderWriterFunction eventReaderWriterFunction;
 
     private Long matchID = 1L;
 
@@ -75,18 +76,32 @@ public class MatchServiceImplIntegrationTest {
         heroEntities.forEach(heroEntry -> heroEntitiesUnique.add(heroEntry));
         Mockito.when(heroRepository.saveAll(heroEntitiesUnique)).thenReturn(heroEntities);
         Mockito.when(heroRepository.findByMatchId(matchID)).thenReturn(heroEntities);
-        Mockito.when(readerUtils.readPayload(EVENTS, matchID)).thenReturn(heroEntitiesUnique);
+        try {
+            Mockito.when(eventReaderWriterFunction.readMatchLogs(EVENTS, matchID)).thenReturn(heroEntitiesUnique);
+        } catch (MatchServiceException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void ingestMatchTest() {
-        Long matchId = matchService.ingestMatch(EVENTS);
+        Long matchId = null;
+        try {
+            matchId = matchService.ingestMatch(EVENTS);
+        } catch (MatchServiceException e) {
+            e.printStackTrace();
+        }
         assertThat(matchId).isEqualTo(matchID);
     }
 
     @Test
     public void getHeroKillsByMatchIdTest() {
-        List<HeroKills> heroKills = matchService.getHeroKillsByMatchId(matchID);
+        List<HeroKills> heroKills = null;
+        try {
+            heroKills = matchService.getHeroKillsByMatchId(matchID);
+        } catch (MatchServiceException e) {
+            e.printStackTrace();
+        }
         for (HeroKills hero : heroKills) {
             assertThat(hero.getHero()).isEqualTo(HERO_NAME);
             assertThat(hero.getKills()).isEqualTo(27);
@@ -95,7 +110,12 @@ public class MatchServiceImplIntegrationTest {
 
     @Test
     public void getItemsByMatchIdAndHeroNameTest() {
-        List<HeroItems> heroItems = matchService.getItemsByMatchIdAndHeroName(matchID, HERO_NAME);
+        List<HeroItems> heroItems = null;
+        try {
+            heroItems = matchService.getItemsByMatchIdAndHeroName(matchID, HERO_NAME);
+        } catch (MatchServiceException e) {
+            e.printStackTrace();
+        }
         for (HeroItems heroItem : heroItems) {
             assertThat(heroItem.getItem()).isEqualTo("tango");
             assertThat(heroItem.getTimestamp()).isEqualTo(919996L);
@@ -104,7 +124,12 @@ public class MatchServiceImplIntegrationTest {
 
     @Test
     public void getHeroSpellsByMatchIdAndHeroNameTest() {
-        List<HeroSpells> heroSpells = matchService.getHeroSpellsByMatchIdAndHeroName(matchID, HERO_NAME);
+        List<HeroSpells> heroSpells = null;
+        try {
+            heroSpells = matchService.getHeroSpellsByMatchIdAndHeroName(matchID, HERO_NAME);
+        } catch (MatchServiceException e) {
+            e.printStackTrace();
+        }
         for (HeroSpells heroSpell : heroSpells) {
             assertThat(heroSpell.getSpell()).isEqualTo("grimstroke_ink_creature");
             assertThat(heroSpell.getCasts()).isEqualTo(15);
@@ -113,7 +138,12 @@ public class MatchServiceImplIntegrationTest {
 
     @Test
     public void getHeroDamageByMatchIdAndHeroNameTest() {
-        List<HeroDamage> heroDamages = matchService.getHeroDamageByMatchIdAndHeroName(matchID, HERO_NAME);
+        List<HeroDamage> heroDamages = null;
+        try {
+            heroDamages = matchService.getHeroDamageByMatchIdAndHeroName(matchID, HERO_NAME);
+        } catch (MatchServiceException e) {
+            e.printStackTrace();
+        }
         for (HeroDamage heroDamage : heroDamages) {
             assertThat(heroDamage.getTarget()).isEqualTo("monkey_king");
             assertThat(heroDamage.getDamageInstances()).isEqualTo(3141);
@@ -130,11 +160,10 @@ public class MatchServiceImplIntegrationTest {
         heroEntity.setMatchId(matchID);
         heroEntity.setHeroName(HERO_NAME);
         heroEntity.setKills(27);
-        heroEntity.setTotal_damages(9669);
 
         HeroDamageEventEntity damageEntity = new HeroDamageEventEntity();
         damageEntity.setTargetHero("monkey_king");
-        damageEntity.setDamage_instance(3141);
+        damageEntity.setDamageInstance(137);
         damageCollection.add(damageEntity);
 
         HeroSpellsEventEntity spellsEntity = new HeroSpellsEventEntity();

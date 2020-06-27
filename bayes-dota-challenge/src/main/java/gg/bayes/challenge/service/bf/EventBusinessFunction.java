@@ -31,9 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class EventBusinessFunction {
 
-    @Autowired
-    EventReaderWriterFunction eventServiceImpl;
-
     /**
      * It is calculating {@link Event.CASTS} logics to manipulate spells hero.
      * 
@@ -113,7 +110,8 @@ public class EventBusinessFunction {
             if (!exitsHittedByHero(damageEntities, strikeAgainst, totalDamage)) {
                 HeroDamageEventEntity damageEntity = new HeroDamageEventEntity();
                 damageEntity.setTargetHero(strikeAgainst);
-                damageEntity.setDamage_instance(totalDamage);
+                damageEntity.setTotalDamage(totalDamage);
+                damageEntity.setDamageInstance(1);
                 damageEntities.add(damageEntity);
             }
             heroDamageEntitiesMap.put(strikeBy, damageEntities);
@@ -121,7 +119,8 @@ public class EventBusinessFunction {
             List<HeroDamageEventEntity> damageEntities = new ArrayList<>();
             HeroDamageEventEntity damageEntity = new HeroDamageEventEntity();
             damageEntity.setTargetHero(strikeAgainst);
-            damageEntity.setDamage_instance(totalDamage);
+            damageEntity.setTotalDamage(totalDamage);
+            damageEntity.setDamageInstance(1);
             damageEntities.add(damageEntity);
             heroDamageEntitiesMap.put(strikeBy, damageEntities);
         }
@@ -138,12 +137,15 @@ public class EventBusinessFunction {
      * @param damageCount    the total damaged count
      * @return {@link Boolean}
      */
+//    npc_dota_hero_grimstroke hits npc_dota_hero_keeper_of_the_light with dota_unknown for 25 damage (260->235)
     private boolean exitsHittedByHero(List<HeroDamageEventEntity> damageEntities, String strikeAgainst,
-            Integer damageCount) {
+            Integer damage) {
         for (HeroDamageEventEntity damageEntity : damageEntities) {
             if (damageEntity.getTargetHero().equals(strikeAgainst)) {
-                Integer damageInstance = damageEntity.getDamage_instance() + damageCount;
-                damageEntity.setDamage_instance(damageInstance);
+                Integer totalDamage = damageEntity.getTotalDamage() + damage;
+                Integer damageInstance = damageEntity.getDamageInstance() + 1;
+                damageEntity.setTotalDamage(totalDamage);
+                damageEntity.setDamageInstance(damageInstance);
                 return true;
             }
         }
@@ -186,27 +188,27 @@ public class EventBusinessFunction {
         return heroEntity;
     }
 
-    /**
-     * This method used for calculated total damage count of hero.
-     * 
-     * @param heroName holds Hero name to count his total damaged.
-     * @return {@link Integer}
-     */
-    public int totalDamageCountforHero(String heroName,
-            Map<String, List<HeroDamageEventEntity>> heroDamageEntitiesMap) {
-        Map<String, List<HeroDamageEventEntity>> damageEntitiesMap = new HashMap<>(heroDamageEntitiesMap);
-        damageEntitiesMap.remove(heroName);
-        int totalDamageCount = 0;
-        for (String hero : damageEntitiesMap.keySet()) {
-            List<HeroDamageEventEntity> damageEntities = damageEntitiesMap.get(hero);
-            for (Iterator<HeroDamageEventEntity> iterator = damageEntities.iterator(); iterator.hasNext();) {
-                HeroDamageEventEntity damageEntity = (HeroDamageEventEntity) iterator.next();
-                if (heroName.equals(damageEntity.getTargetHero())) {
-                    totalDamageCount = totalDamageCount + damageEntity.getDamage_instance();
-                }
-            }
-        }
-        return totalDamageCount;
-
-    }
+//    /**
+//     * This method used for calculated total damage count of hero.
+//     * 
+//     * @param heroName holds Hero name to count his total damaged.
+//     * @return {@link Integer}
+//     */
+//    public int totalDamageCountforHero(String heroName,
+//            Map<String, List<HeroDamageEventEntity>> heroDamageEntitiesMap) {
+//        Map<String, List<HeroDamageEventEntity>> damageEntitiesMap = new HashMap<>(heroDamageEntitiesMap);
+//        damageEntitiesMap.remove(heroName);
+//        int totalDamageCount = 0;
+//        for (String hero : damageEntitiesMap.keySet()) {
+//            List<HeroDamageEventEntity> damageEntities = damageEntitiesMap.get(hero);
+//            for (Iterator<HeroDamageEventEntity> iterator = damageEntities.iterator(); iterator.hasNext();) {
+//                HeroDamageEventEntity damageEntity = (HeroDamageEventEntity) iterator.next();
+//                if (heroName.equals(damageEntity.getTargetHero())) {
+//                    totalDamageCount = totalDamageCount + damageEntity.getDamage_instance();
+//                }
+//            }
+//        }
+//        return totalDamageCount;
+//
+//    }
 }

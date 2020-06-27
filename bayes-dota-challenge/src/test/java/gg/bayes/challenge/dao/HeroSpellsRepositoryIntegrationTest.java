@@ -32,7 +32,6 @@ public class HeroSpellsRepositoryIntegrationTest {
         heroEntity.setHeroName("rubick");
         heroEntity.setMatchId(1L);
         heroEntity.setKills(27);
-        heroEntity.setTotal_damages(9669);
 
         HeroSpellsEventEntity heroSpellsEntity = new HeroSpellsEventEntity();
         heroSpellsEntity.setCaste(26);
@@ -46,7 +45,7 @@ public class HeroSpellsRepositoryIntegrationTest {
         entityManager.persist(heroEntity);
         entityManager.flush();
 
-        List<HeroSpellsEventEntity> heroSpellsEntityCollection = heroSpellsRepository.join("rubick", 1L);
+        List<HeroSpellsEventEntity> heroSpellsEntityCollection = heroSpellsRepository.fetchHeroSpellsEvent("rubick", 1L);
         heroSpellsEntityCollection.forEach(herospells -> {
             assertThat(herospells.getCaste()).isEqualTo(heroSpellsEntity.getCaste());
             assertThat(herospells.getSpellName()).isEqualTo(heroSpellsEntity.getSpellName());

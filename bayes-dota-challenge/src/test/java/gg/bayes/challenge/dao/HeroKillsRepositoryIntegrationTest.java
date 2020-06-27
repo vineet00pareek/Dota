@@ -32,7 +32,6 @@ public class HeroKillsRepositoryIntegrationTest {
         heroEntity.setHeroName("rubick");
         heroEntity.setMatchId(1L);
         heroEntity.setKills(27);
-        heroEntity.setTotal_damages(9669);
         entityManager.persist(heroEntity);
         entityManager.flush();
 
@@ -40,7 +39,6 @@ public class HeroKillsRepositoryIntegrationTest {
         heroKillsEntityCollection.forEach(hero -> {
             assertThat(hero.getHeroName()).isEqualTo(heroEntity.getHeroName());
             assertThat(hero.getKills()).isEqualTo(heroEntity.getKills());
-            assertThat(hero.getTotal_damages()).isEqualTo(heroEntity.getTotal_damages());
         });
     }
 

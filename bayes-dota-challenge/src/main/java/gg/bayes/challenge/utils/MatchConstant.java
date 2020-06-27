@@ -36,5 +36,10 @@ public interface MatchConstant {
      * This is used for to identified unique hero.
      */
     String SYMBOL_S = "'s";
+    
+    /**
+     * This is used for to identified unique hero.
+     */
+    String GAME = "game";
 
 }

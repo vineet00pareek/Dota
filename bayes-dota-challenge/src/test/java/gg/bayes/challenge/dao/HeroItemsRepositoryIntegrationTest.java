@@ -33,7 +33,6 @@ public class HeroItemsRepositoryIntegrationTest {
         heroEntity.setHeroName("rubick");
         heroEntity.setMatchId(1L);
         heroEntity.setKills(27);
-        heroEntity.setTotal_damages(9669);
 
         HeroItemsEventEntity heroItemsEntity = new HeroItemsEventEntity();
         heroItemsEntity.setItem("recipe_wraith_band");
@@ -46,7 +45,7 @@ public class HeroItemsRepositoryIntegrationTest {
 
         entityManager.persist(heroEntity);
         entityManager.flush();
-        List<HeroItemsEventEntity> heroItemsEntityCollection = heroItemsRepository.join("rubick", 1L);
+        List<HeroItemsEventEntity> heroItemsEntityCollection = heroItemsRepository.fetchHeroItemsEvent("rubick", 1L);
 
         heroItemsEntityCollection.forEach(heroItems -> {
             assertThat(heroItems.getItem()).isEqualTo(heroItemsEntity.getItem());
