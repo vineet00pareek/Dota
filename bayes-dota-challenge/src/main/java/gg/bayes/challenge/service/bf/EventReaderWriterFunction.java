@@ -1,7 +1,6 @@
 package gg.bayes.challenge.service.bf;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,9 +104,10 @@ public class EventReaderWriterFunction {
                     writeEvents(eventlogs);
                 }
             }
-        }catch (Exception exc) {
-            log.error("Getting exception while reading Events from match logs",exc);
-            throw new MatchServiceException("Getting exception while reading Events from match logs", exc.getMessage(), exc);
+        } catch (Exception exc) {
+            log.error("Getting exception while reading Events from match logs", exc);
+            throw new MatchServiceException("Getting exception while reading Events from match logs", exc.getMessage(),
+                    exc);
         }
     }
 
@@ -178,9 +178,14 @@ public class EventReaderWriterFunction {
             countHeroKills(eventlogs);
         }
     }
-   // npc_dota_hero_ember_spirit is killed by npc_dota_hero_monkey_king
+
+    /**
+     * This method used to count hero kill in match based on match logs
+     * 
+     * @param eventlogs
+     */
     private void countHeroKills(String eventlogs) {
-        String [] killedEvent = eventlogs.split(Event.KILLED.getEvent());
+        String[] killedEvent = eventlogs.split(Event.KILLED.getEvent());
         String killedByHero = killedEvent[1];
         for (String heroName : heroes) {
             if (killedByHero.contains(MatchConstant.NPC_DOTA_HERO + heroName)) {

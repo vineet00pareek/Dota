@@ -33,7 +33,7 @@ public class MatchController {
 
     @PostMapping(consumes = "text/plain")
     public ResponseEntity<?> ingestMatch(@RequestBody @NotNull @NotBlank String payload) {
-        log.debug("Method entered for reading match event...");
+        log.debug("Method entered in ingestMatch() for reading match event...");
         Long matchId;
         try {
             matchId = matchService.ingestMatch(payload);
@@ -46,10 +46,9 @@ public class MatchController {
 
     @GetMapping("{matchId}")
     public ResponseEntity<?> getMatch(@PathVariable("matchId") Long matchId) {
-        log.debug("Method entered for fetching match details from match ID");
-        List<HeroKills> heroKills = null;
+        log.debug("Method entered in getMatch() for fetching match details from match ID");
         try {
-            heroKills = matchService.getHeroKillsByMatchId(matchId);
+            List<HeroKills> heroKills = matchService.getHeroKillsByMatchId(matchId);
             log.info("Successfully received the match detail from Match ID :" + matchId + " Match detail: "
                     + heroKills);
             return responseUtils.buildOk(heroKills);
@@ -62,10 +61,9 @@ public class MatchController {
     @GetMapping("{matchId}/{heroName}/items")
     public ResponseEntity<?> getItems(@PathVariable("matchId") Long matchId,
             @PathVariable("heroName") String heroName) {
-        log.debug("Method entered for fetching Items event from Match ID and Hero name");
-        List<HeroItems> heroItems = null;
+        log.debug("Method entered in getItems() for fetching Items event from Match ID and Hero name");
         try {
-            heroItems = matchService.getItemsByMatchIdAndHeroName(matchId, heroName);
+            List<HeroItems> heroItems = matchService.getItemsByMatchIdAndHeroName(matchId, heroName);
             log.info("Successfully received the Item events from Match ID :" + matchId + " Item event : "
                     + heroItems);
             return responseUtils.buildOk(heroItems);
@@ -78,10 +76,9 @@ public class MatchController {
     @GetMapping("{matchId}/{heroName}/spells")
     public ResponseEntity<?> getSpells(@PathVariable("matchId") Long matchId,
             @PathVariable("heroName") String heroName) {
-        log.debug("Method entered for fetching Spell event from Match ID and Hero name");
-        List<HeroSpells> heroSpells = null;
+        log.debug("Method entered in getSpells() for fetching Spell event from Match ID and Hero name");
         try {
-            heroSpells = matchService.getHeroSpellsByMatchIdAndHeroName(matchId, heroName);
+            List<HeroSpells> heroSpells = matchService.getHeroSpellsByMatchIdAndHeroName(matchId, heroName);
             log.info("Successfully received the Spell events from Match ID  :" + matchId + " with Hero name: "
                     + heroName + " Item event : " + heroSpells);
             return responseUtils.buildOk(heroSpells);
@@ -92,14 +89,12 @@ public class MatchController {
 
     }
 
-//TODO: README change return type as generic
     @GetMapping("{matchId}/{heroName}/damage")
     public ResponseEntity<?> getDamage(@PathVariable("matchId") Long matchId,
             @PathVariable("heroName") String heroName) {
-        log.debug("Method entered for fetching Damage event from Match ID and Hero name");
-        List<HeroDamage> heroDamages = null;
+        log.debug("Method entered in getDamage() for fetching Damage event from Match ID and Hero name");
         try {
-            heroDamages = matchService.getHeroDamageByMatchIdAndHeroName(matchId, heroName);
+            List<HeroDamage> heroDamages = matchService.getHeroDamageByMatchIdAndHeroName(matchId, heroName);
             log.info("Successfully received the Spell Damage from Match ID  :" + matchId + " with Hero : " + heroName
                     + " Item event : " + heroDamages);
             return responseUtils.buildOk(heroDamages);

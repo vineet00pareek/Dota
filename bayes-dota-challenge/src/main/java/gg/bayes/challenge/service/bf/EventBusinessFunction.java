@@ -1,14 +1,11 @@
 package gg.bayes.challenge.service.bf;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import gg.bayes.challenge.pojo.HeroDamageEventEntity;
@@ -137,7 +134,6 @@ public class EventBusinessFunction {
      * @param damageCount    the total damaged count
      * @return {@link Boolean}
      */
-//    npc_dota_hero_grimstroke hits npc_dota_hero_keeper_of_the_light with dota_unknown for 25 damage (260->235)
     private boolean exitsHittedByHero(List<HeroDamageEventEntity> damageEntities, String strikeAgainst,
             Integer damage) {
         for (HeroDamageEventEntity damageEntity : damageEntities) {
@@ -187,28 +183,4 @@ public class EventBusinessFunction {
         });
         return heroEntity;
     }
-
-//    /**
-//     * This method used for calculated total damage count of hero.
-//     * 
-//     * @param heroName holds Hero name to count his total damaged.
-//     * @return {@link Integer}
-//     */
-//    public int totalDamageCountforHero(String heroName,
-//            Map<String, List<HeroDamageEventEntity>> heroDamageEntitiesMap) {
-//        Map<String, List<HeroDamageEventEntity>> damageEntitiesMap = new HashMap<>(heroDamageEntitiesMap);
-//        damageEntitiesMap.remove(heroName);
-//        int totalDamageCount = 0;
-//        for (String hero : damageEntitiesMap.keySet()) {
-//            List<HeroDamageEventEntity> damageEntities = damageEntitiesMap.get(hero);
-//            for (Iterator<HeroDamageEventEntity> iterator = damageEntities.iterator(); iterator.hasNext();) {
-//                HeroDamageEventEntity damageEntity = (HeroDamageEventEntity) iterator.next();
-//                if (heroName.equals(damageEntity.getTargetHero())) {
-//                    totalDamageCount = totalDamageCount + damageEntity.getDamage_instance();
-//                }
-//            }
-//        }
-//        return totalDamageCount;
-//
-//    }
 }

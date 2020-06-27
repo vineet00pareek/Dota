@@ -48,11 +48,6 @@ public class HeroMatchEventEntity {
     private Integer kills;
 
     /**
-     * It's holds total damage count by hitted by all heroes.
-     */
-    private Integer total_damages;
-
-    /**
      * It's hold relation of {@link HeroMatchEventEntity} to
      * {@link HeroItemsEventEntity}}
      */
