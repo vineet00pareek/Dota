@@ -69,39 +69,29 @@ public class MatchServiceImplIntegrationTest {
     private static final String EVENTS = "[00:10:41.998] npc_dota_hero_abyssal_underlord casts ability abyssal_underlord_firestorm (lvl 1) on dota_unknown";
 
     @Before
-    public void setUp() {
+    public void setUp() throws MatchServiceException {
 
         List<HeroMatchEventEntity> heroEntities = getHeroEntity();
         Set<HeroMatchEventEntity> heroEntitiesUnique = new HashSet<>();
         heroEntities.forEach(heroEntry -> heroEntitiesUnique.add(heroEntry));
         Mockito.when(heroRepository.saveAll(heroEntitiesUnique)).thenReturn(heroEntities);
         Mockito.when(heroRepository.findByMatchId(matchID)).thenReturn(heroEntities);
-        try {
-            Mockito.when(eventReaderWriterFunction.readMatchLogs(EVENTS, matchID)).thenReturn(heroEntitiesUnique);
-        } catch (MatchServiceException e) {
-            e.printStackTrace();
-        }
+        Mockito.when(heroSpellsRepository.fetchHeroSpellsEvent(HERO_NAME, matchID)).thenReturn(getSpell());
+        Mockito.when(heroDamageRepository.fetchHeroDamageEvent(HERO_NAME, matchID)).thenReturn(getDamage());
+        Mockito.when(heroItemsRepository.fetchHeroItemsEvent(HERO_NAME, matchID)).thenReturn(getItems());
+        Mockito.when(eventReaderWriterFunction.readMatchLogs(EVENTS, matchID)).thenReturn(heroEntitiesUnique);
     }
 
     @Test
-    public void ingestMatchTest() {
+    public void ingestMatchTest() throws MatchServiceException {
         Long matchId = null;
-        try {
-            matchId = matchService.ingestMatch(EVENTS);
-        } catch (MatchServiceException e) {
-            e.printStackTrace();
-        }
+        matchId = matchService.ingestMatch(EVENTS);
         assertThat(matchId).isEqualTo(matchID);
     }
 
     @Test
-    public void getHeroKillsByMatchIdTest() {
-        List<HeroKills> heroKills = null;
-        try {
-            heroKills = matchService.getHeroKillsByMatchId(matchID);
-        } catch (MatchServiceException e) {
-            e.printStackTrace();
-        }
+    public void getHeroKillsByMatchIdTest() throws MatchServiceException {
+        List<HeroKills> heroKills = matchService.getHeroKillsByMatchId(matchID);
         for (HeroKills hero : heroKills) {
             assertThat(hero.getHero()).isEqualTo(HERO_NAME);
             assertThat(hero.getKills()).isEqualTo(27);
@@ -109,13 +99,8 @@ public class MatchServiceImplIntegrationTest {
     }
 
     @Test
-    public void getItemsByMatchIdAndHeroNameTest() {
-        List<HeroItems> heroItems = null;
-        try {
-            heroItems = matchService.getItemsByMatchIdAndHeroName(matchID, HERO_NAME);
-        } catch (MatchServiceException e) {
-            e.printStackTrace();
-        }
+    public void getItemsByMatchIdAndHeroNameTest() throws MatchServiceException {
+        List<HeroItems> heroItems = matchService.getItemsByMatchIdAndHeroName(matchID, HERO_NAME);
         for (HeroItems heroItem : heroItems) {
             assertThat(heroItem.getItem()).isEqualTo("tango");
             assertThat(heroItem.getTimestamp()).isEqualTo(919996L);
@@ -123,13 +108,8 @@ public class MatchServiceImplIntegrationTest {
     }
 
     @Test
-    public void getHeroSpellsByMatchIdAndHeroNameTest() {
-        List<HeroSpells> heroSpells = null;
-        try {
-            heroSpells = matchService.getHeroSpellsByMatchIdAndHeroName(matchID, HERO_NAME);
-        } catch (MatchServiceException e) {
-            e.printStackTrace();
-        }
+    public void getHeroSpellsByMatchIdAndHeroNameTest() throws MatchServiceException {
+        List<HeroSpells> heroSpells = matchService.getHeroSpellsByMatchIdAndHeroName(matchID, HERO_NAME);
         for (HeroSpells heroSpell : heroSpells) {
             assertThat(heroSpell.getSpell()).isEqualTo("grimstroke_ink_creature");
             assertThat(heroSpell.getCasts()).isEqualTo(15);
@@ -137,50 +117,54 @@ public class MatchServiceImplIntegrationTest {
     }
 
     @Test
-    public void getHeroDamageByMatchIdAndHeroNameTest() {
-        List<HeroDamage> heroDamages = null;
-        try {
-            heroDamages = matchService.getHeroDamageByMatchIdAndHeroName(matchID, HERO_NAME);
-        } catch (MatchServiceException e) {
-            e.printStackTrace();
-        }
+    public void getHeroDamageByMatchIdAndHeroNameTest() throws MatchServiceException {
+        List<HeroDamage> heroDamages = matchService.getHeroDamageByMatchIdAndHeroName(matchID, HERO_NAME);
         for (HeroDamage heroDamage : heroDamages) {
             assertThat(heroDamage.getTarget()).isEqualTo("monkey_king");
-            assertThat(heroDamage.getDamageInstances()).isEqualTo(3141);
+            assertThat(heroDamage.getDamageInstances()).isEqualTo(137);
         }
     }
 
     private List<HeroMatchEventEntity> getHeroEntity() {
         List<HeroMatchEventEntity> heroEntities = new ArrayList<HeroMatchEventEntity>();
-        List<HeroItemsEventEntity> iteamCollection = new ArrayList<>();
-        List<HeroSpellsEventEntity> spellCollection = new ArrayList<>();
-        List<HeroDamageEventEntity> damageCollection = new ArrayList<>();
 
         HeroMatchEventEntity heroEntity = new HeroMatchEventEntity();
         heroEntity.setMatchId(matchID);
         heroEntity.setHeroName(HERO_NAME);
         heroEntity.setKills(27);
 
-        HeroDamageEventEntity damageEntity = new HeroDamageEventEntity();
-        damageEntity.setTargetHero("monkey_king");
-        damageEntity.setDamageInstance(137);
-        damageCollection.add(damageEntity);
+        heroEntity.setHeroDamageCollection(getDamage());
+        heroEntity.setHeroIteamCollection(getItems());
+        heroEntity.setHeroSpellsCollection(getSpell());
+        heroEntities.add(heroEntity);
 
-        HeroSpellsEventEntity spellsEntity = new HeroSpellsEventEntity();
-        spellsEntity.setCaste(15);
-        spellsEntity.setSpellName("grimstroke_ink_creature");
-        spellCollection.add(spellsEntity);
+        return heroEntities;
+    }
 
+    private List<HeroItemsEventEntity> getItems() {
+        List<HeroItemsEventEntity> iteamCollection = new ArrayList<>();
         HeroItemsEventEntity itemsEntity = new HeroItemsEventEntity();
         itemsEntity.setItem("tango");
         itemsEntity.setTime(919996L);
         iteamCollection.add(itemsEntity);
+        return iteamCollection;
+    }
 
-        heroEntity.setHeroDamageCollection(damageCollection);
-        heroEntity.setHeroIteamCollection(iteamCollection);
-        heroEntity.setHeroSpellsCollection(spellCollection);
-        heroEntities.add(heroEntity);
+    private List<HeroDamageEventEntity> getDamage() {
+        List<HeroDamageEventEntity> damageCollection = new ArrayList<>();
+        HeroDamageEventEntity damageEntity = new HeroDamageEventEntity();
+        damageEntity.setTargetHero("monkey_king");
+        damageEntity.setDamageInstance(137);
+        damageCollection.add(damageEntity);
+        return damageCollection;
+    }
 
-        return heroEntities;
+    private List<HeroSpellsEventEntity> getSpell() {
+        List<HeroSpellsEventEntity> spellCollection = new ArrayList<>();
+        HeroSpellsEventEntity spellsEntity = new HeroSpellsEventEntity();
+        spellsEntity.setCaste(15);
+        spellsEntity.setSpellName("grimstroke_ink_creature");
+        spellCollection.add(spellsEntity);
+        return spellCollection;
     }
 }

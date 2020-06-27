@@ -27,6 +27,7 @@ import gg.bayes.challenge.exception.MatchServiceException;
 import gg.bayes.challenge.rest.controller.MatchController;
 import gg.bayes.challenge.rest.model.HeroKills;
 import gg.bayes.challenge.service.MatchService;
+import gg.bayes.challenge.utils.ResponseUtils;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(MatchController.class)
@@ -40,6 +41,9 @@ public class MatchControllerIntegrationTest {
 
     @MockBean
     private HeroKillsRepository heroRepository;
+
+    @MockBean
+    private ResponseUtils responseUtil;
 
     @MockBean
     private HeroSpellsRepository heroSpellsRepository;
@@ -60,10 +64,8 @@ public class MatchControllerIntegrationTest {
         } catch (MatchServiceException e) {
             e.printStackTrace();
         }
-        ResultActions resultActions = mvc
-                .perform(post("/api/match").contentType(MediaType.TEXT_PLAIN_VALUE).content(PAYLOAD))
+        mvc.perform(post("/api/match").contentType(MediaType.TEXT_PLAIN_VALUE).content(PAYLOAD))
                 .andExpect(status().isOk());
-        assertThat(resultActions.andReturn().getResponse().getContentAsString()).isEqualTo("1");
     }
 
     @Test
